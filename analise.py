@@ -3,11 +3,11 @@ from numpy import int64
 import json
 import pandas as pd
 from datetime import datetime, date
-df = pd.DataFrame(pd.read_csv("D:\\Dev\\fast\\teste.csv", delimiter=';'))
+df = pd.DataFrame(pd.read_csv("/home/panzee/Dev/fin-project-api/teste.csv", delimiter=';'))
 objetivosdf = pd.DataFrame(pd.read_csv(
-    "D:\\Dev\\fast\\objetivos.csv", delimiter=';'))
+    "/home/panzee/Dev/fin-project-api/objetivos.csv", delimiter=';'))
 contasdf = pd.DataFrame(pd.read_csv(
-    "D:\\Dev\\fast\\contas.csv", delimiter=';'))
+    "/home/panzee/Dev/fin-project-api/contas.csv", delimiter=';'))
 
 df['datetime'] = pd.to_datetime(
     df.Data, format="%d/%m/%Y")
@@ -64,12 +64,15 @@ def receitasByMonth(timestamp):
 
     desired_month_year = datetime.fromtimestamp(timestamp)
     print(desired_month_year)
-    previous_desired_month_year = datetime.fromtimestamp(
-        timestamp - MONTH_IN_SECONDS)
+
+    
+    # previous_desired_month_year = datetime.fromtimestamp(
+    #     timestamp - MONTH_IN_SECONDS)
+    previous_desired_month_year = datetime(datetime.now().year, datetime.now().month - 1, 1)
     print(previous_desired_month_year)
     most_recent = datetime.fromtimestamp(df.timestamp.max())
-    previous_most_recent = datetime.fromtimestamp(
-        df.timestamp.max() - MONTH_IN_SECONDS)
+    previous_most_recent = datetime(most_recent.year, most_recent.month - 1, 1)
+    print(f"most {previous_most_recent}")
 
     df['is_desired_month_year'] = df['datetime'].map(
         lambda x: x.month + x.year) == desired_month_year.month + desired_month_year.year
@@ -82,6 +85,8 @@ def receitasByMonth(timestamp):
 
     df['previous_most_recent'] = df['datetime'].map(
         lambda x: x.month + x.year) == previous_most_recent.month + previous_most_recent.year
+
+    print(df)
 
     tm = df.query('is_desired_month_year == True')
     pdm = df.query('is_previous_desired_month_year == True')
@@ -128,6 +133,10 @@ def recursoAvancado(recurso):
     ha_um_ano = datetime(datetime.now().year - 1,
                          datetime.now().month, 1).timestamp()
     ultimos_doze_meses = df.query(f"timestamp > {ha_um_ano}")
+
+    receitas_total = ultimos_doze_meses.query("Valor > 0")['Valor'].sum()
+    print(receitas_total)
+
     dfrecurso = ultimos_doze_meses.query(f'recurso == "{recurso}"')
     dfrecurso = dfrecurso.sort_values(by='timestamp')
 
@@ -173,7 +182,8 @@ def recursoAvancado(recurso):
         "maiorRenda": maxValue,
         'timestampMaior': timestampMaior*1000,
         'variacaoDespesas': variacao_despesas,
-        "mesesReferencia": meses_referencia_count
+        "mesesReferencia": meses_referencia_count,
+        "porcentagemReceitas": dfreceitas['Valor'].sum() / receitas_total * 100
     }
 
 
@@ -202,6 +212,7 @@ def dashboard():
 
     despesas = ano_atras.query('Valor < 0')['Valor'].sum()
     receitas = ano_atras.query('Valor > 0')['Valor'].sum()
+    print(receitas)
 
     reserva = contasdf.query('Conta == "Guardado Silvana"')['Valor'].sum()
     reserva2 = contasdf.query('Conta == "Guardado Alexis"')['Valor'].sum()
