@@ -63,30 +63,32 @@ def receitasByMonth(timestamp):
         return []
 
     desired_month_year = datetime.fromtimestamp(timestamp)
-    print(desired_month_year)
+    print(f"desired_month_year: {desired_month_year}, month: {desired_month_year.month}")
 
-    
-    # previous_desired_month_year = datetime.fromtimestamp(
-    #     timestamp - MONTH_IN_SECONDS)
-    previous_desired_month_year = datetime(datetime.now().year, datetime.now().month - 1, 1)
-    print(previous_desired_month_year)
+    previous_desired_month_year = datetime(desired_month_year.year, desired_month_year.month - 1, 1)
+    print(f"previous_desired_month_year: {previous_desired_month_year}")
+
     most_recent = datetime.fromtimestamp(df.timestamp.max())
+    print(f"most_recent: {most_recent}")
+
     previous_most_recent = datetime(most_recent.year, most_recent.month - 1, 1)
-    print(f"most {previous_most_recent}")
+    print(f"previous_most_recent: {previous_most_recent}")
 
-    df['is_desired_month_year'] = df['datetime'].map(
-        lambda x: x.month + x.year) == desired_month_year.month + desired_month_year.year
+    df['is_desired_month_year'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(timestamp).year,
+                       datetime.fromtimestamp(timestamp).month, 1) #desired_month_year.month + desired_month_year.year
 
-    df['is_previous_desired_month_year'] = df['datetime'].map(
-        lambda x: x.month + x.year) == previous_desired_month_year.month + previous_desired_month_year.year
+    df['is_previous_desired_month_year'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(previous_desired_month_year.timestamp()).year,
+                       datetime.fromtimestamp(previous_desired_month_year.timestamp()).month, 1) #previous_desired_month_year.month + previous_desired_month_year.year
 
-    df['most_recent'] = df['datetime'].map(
-        lambda x: x.month + x.year) == most_recent.month + most_recent.year
+    df['most_recent'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(most_recent.timestamp()).year,
+                       datetime.fromtimestamp(most_recent.timestamp()).month, 1)#most_recent.month + most_recent.year
 
-    df['previous_most_recent'] = df['datetime'].map(
-        lambda x: x.month + x.year) == previous_most_recent.month + previous_most_recent.year
-
-    print(df)
+    df['previous_most_recent'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(previous_most_recent.timestamp()).year,
+                       datetime.fromtimestamp(previous_most_recent.timestamp()).month, 1) # previous_most_recent.month + previous_most_recent.year
 
     tm = df.query('is_desired_month_year == True')
     pdm = df.query('is_previous_desired_month_year == True')
