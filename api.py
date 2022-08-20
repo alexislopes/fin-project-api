@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from analise import balancoMensal, despesas, receitas, receitasAlexis, receitasSilvana, receitasByMonth, getCusto, recursoAvancado, getObjetivos, dashboard
+from analise import balancoMensal, despesas, receitas, receitasAlexis, receitasSilvana, receitasByMonth, getCusto, recursoAvancado, getObjetivos, dashboard, mercado
 
 
 app = FastAPI()
@@ -53,3 +53,7 @@ def objetivos():
 @app.get("/dashboard")
 def getDasboard():
     return dashboard()
+
+@app.get("/mercado")
+def getMercado():
+    return mercado()

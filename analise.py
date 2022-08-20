@@ -3,33 +3,15 @@ from numpy import int64
 import json
 import pandas as pd
 from datetime import datetime, date
-df = pd.DataFrame(pd.read_csv("D:\\Dev\\fast\\teste.csv", delimiter=';'))
-objetivosdf = pd.DataFrame(pd.read_csv(
-    "D:\\Dev\\fast\\objetivos.csv", delimiter=';'))
-contasdf = pd.DataFrame(pd.read_csv(
-    "D:\\Dev\\fast\\contas.csv", delimiter=';'))
+from datasets import mercado_dataframe, objetivos_dataframe, contas_dataframe, transacoes_dataframe
 
-df['datetime'] = pd.to_datetime(
-    df.Data, format="%d/%m/%Y")
-df['timestamp'] = df.datetime.astype('int64') // 10**9
-df["month_year"] = df.timestamp.map(
-    lambda x: datetime(datetime.fromtimestamp(x).year,
-                       datetime.fromtimestamp(x).month, 1))
-# df["month_year"] = df.timestamp.map(
-#     lambda x: str(datetime.fromtimestamp(x).month) + str(datetime.fromtimestamp(x).year))
-# df['Silvana'] = df.Conta.str.contains('Silvana')
-# df['Alexis'] = df.Conta.str.contains('Alexis')
+df = transacoes_dataframe()
 recursos = ['Silvana', 'Alexis']
-df['recurso'] = df.Conta.map(
-    lambda x: x.split(" ")[len(x.split(" ")) - 1] if any(ext in x for ext in recursos) else None)
 
-MONTH_IN_SECONDS = 2635200
-YEAR_IN_SECONDS = 31104000
 
 
 def balancoMensal():
     return df['Valor'].sum()
-
 
 def despesas():
     despesas = df.query('Valor < 0')
@@ -63,25 +45,28 @@ def receitasByMonth(timestamp):
         return []
 
     desired_month_year = datetime.fromtimestamp(timestamp)
-    print(desired_month_year)
-    previous_desired_month_year = datetime.fromtimestamp(
-        timestamp - MONTH_IN_SECONDS)
-    print(previous_desired_month_year)
+
+    previous_desired_month_year = datetime(desired_month_year.year, desired_month_year.month - 1, 1)
+
     most_recent = datetime.fromtimestamp(df.timestamp.max())
-    previous_most_recent = datetime.fromtimestamp(
-        df.timestamp.max() - MONTH_IN_SECONDS)
 
-    df['is_desired_month_year'] = df['datetime'].map(
-        lambda x: x.month + x.year) == desired_month_year.month + desired_month_year.year
+    previous_most_recent = datetime(most_recent.year, most_recent.month - 1, 1)
 
-    df['is_previous_desired_month_year'] = df['datetime'].map(
-        lambda x: x.month + x.year) == previous_desired_month_year.month + previous_desired_month_year.year
+    df['is_desired_month_year'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(timestamp).year,
+                       datetime.fromtimestamp(timestamp).month, 1) #desired_month_year.month + desired_month_year.year
 
-    df['most_recent'] = df['datetime'].map(
-        lambda x: x.month + x.year) == most_recent.month + most_recent.year
+    df['is_previous_desired_month_year'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(previous_desired_month_year.timestamp()).year,
+                       datetime.fromtimestamp(previous_desired_month_year.timestamp()).month, 1) #previous_desired_month_year.month + previous_desired_month_year.year
 
-    df['previous_most_recent'] = df['datetime'].map(
-        lambda x: x.month + x.year) == previous_most_recent.month + previous_most_recent.year
+    df['most_recent'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(most_recent.timestamp()).year,
+                       datetime.fromtimestamp(most_recent.timestamp()).month, 1)#most_recent.month + most_recent.year
+
+    df['previous_most_recent'] = df['month_year'].map(
+        lambda x: x) == datetime(datetime.fromtimestamp(previous_most_recent.timestamp()).year,
+                       datetime.fromtimestamp(previous_most_recent.timestamp()).month, 1) # previous_most_recent.month + previous_most_recent.year
 
     tm = df.query('is_desired_month_year == True')
     pdm = df.query('is_previous_desired_month_year == True')
@@ -100,8 +85,7 @@ def receitasByMonth(timestamp):
     grouped = tm.groupby("recurso")
 
     ts = timestamp if isCurrentMonth else df.timestamp.max().item()
-    pts = timestamp - MONTH_IN_SECONDS if isCurrentMonth else df.timestamp.max().item() - \
-        MONTH_IN_SECONDS
+    pts = previous_desired_month_year.timestamp() if isCurrentMonth else previous_most_recent.timestamp()
 
     desired = json.loads(grouped['Valor'].sum().to_json())
     previous = json.loads(groupedpmr['Valor'].sum().to_json())
@@ -128,6 +112,10 @@ def recursoAvancado(recurso):
     ha_um_ano = datetime(datetime.now().year - 1,
                          datetime.now().month, 1).timestamp()
     ultimos_doze_meses = df.query(f"timestamp > {ha_um_ano}")
+
+    receitas_total = ultimos_doze_meses.query("Valor > 0")['Valor'].sum()
+    print(receitas_total)
+
     dfrecurso = ultimos_doze_meses.query(f'recurso == "{recurso}"')
     dfrecurso = dfrecurso.sort_values(by='timestamp')
 
@@ -173,13 +161,15 @@ def recursoAvancado(recurso):
         "maiorRenda": maxValue,
         'timestampMaior': timestampMaior*1000,
         'variacaoDespesas': variacao_despesas,
-        "mesesReferencia": meses_referencia_count
+        "mesesReferencia": meses_referencia_count,
+        "porcentagemReceitas": dfreceitas['Valor'].sum() / receitas_total * 100
     }
 
 
 def getObjetivos():
-
-    objetivos_agrupados = objetivosdf.groupby('Descricao')
+    objdf = objetivos_dataframe()    
+                                                                                                                    
+    objetivos_agrupados = objdf.groupby('Descricao')
     objetivos = []
     for name, group in objetivos_agrupados:
         group = group.groupby('Recurso')
@@ -194,6 +184,8 @@ def getObjetivos():
 
 
 def dashboard():
+    contasdf = contas_dataframe()
+    
     ha_um_ano = datetime(datetime.now().year - 1,
                          datetime.now().month, 1).timestamp()
 
@@ -202,6 +194,8 @@ def dashboard():
 
     despesas = ano_atras.query('Valor < 0')['Valor'].sum()
     receitas = ano_atras.query('Valor > 0')['Valor'].sum()
+    print(receitas)
+
 
     reserva = contasdf.query('Conta == "Guardado Silvana"')['Valor'].sum()
     reserva2 = contasdf.query('Conta == "Guardado Alexis"')['Valor'].sum()
@@ -211,3 +205,34 @@ def dashboard():
         'receitas': receitas / meses_referencia_count,
         'reserva': reserva + reserva2
     }
+
+def mercado():
+    # mercadosdf["total"] = mercadosdf.apply(lambda x: x["quantity"] * x["price"], axis=1)
+    # grouped = mercadosdf.groupby("description")
+    mercado = mercado_dataframe()
+
+  
+    
+    print(mercado)
+
+    # print(grouped.groups)
+    # folder = "1iE_m8FCXT5f5-m_juEcHFjRlkG4BkwvN"
+    # arquivos = drive.ListFile({'q': f"'{folder}' in parents and trashed=false"}).GetList()
+    # csvs = []
+    # for arquivo in arquivos:
+    #     arquivo.GetContentFile(arquivo['title'])
+    #     csvs.append(arquivo["title"])
+
+    # df = []
+    # for csv in csvs:
+    #     df.append(pd.read_csv(csv, delimiter=',' ))
+
+    # dataframe = pd.concat(df)
+    # print(dataframe)
+    # drive.GetContentFile("oom_list_export 01-22.csv")
+    # for name, group in grouped:
+    #     print(group) 
+    # print(mercadosdf["total"].sum())
+    # print(mercadosdf.iloc[mercadosdf["total"].idxmax()])
+    # print(mercadosdf.iloc[mercadosdf["total"].idxmin()])
+    return "oi"

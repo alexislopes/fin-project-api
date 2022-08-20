@@ -26,6 +26,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+bin
+lib64
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -128,3 +130,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 *.csv
+pyvenv.cfg
+client_secret_111708090615-3vi1ad78mikh6oq91rtv0mdud3nqgqv2.apps.googleusercontent.com (1).jsonZone.Identifier
+client_secrets.json
+cred.json
+file_ids.json
+settings.yaml
