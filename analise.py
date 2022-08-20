@@ -209,11 +209,22 @@ def dashboard():
 def mercado():
     # mercadosdf["total"] = mercadosdf.apply(lambda x: x["quantity"] * x["price"], axis=1)
     # grouped = mercadosdf.groupby("description")
-    mercado = mercado_dataframe()
+    mercadodf = mercado_dataframe()
+    mercadodf_grouped = mercadodf.groupby("description")
 
-  
-    
-    print(mercado)
+    months = mercadodf["date"].unique()
+    print(months)
+
+    items = []
+    for name, group in mercadodf_grouped:
+        items.append({
+            "item": name,
+            "frequencia": group["price"].count().item(),
+            "media": group["price"].mean().item(),
+            "quantidade": len(months)
+        })
+        print(name)
+        print(group["price"].count())
 
     # print(grouped.groups)
     # folder = "1iE_m8FCXT5f5-m_juEcHFjRlkG4BkwvN"
@@ -235,4 +246,4 @@ def mercado():
     # print(mercadosdf["total"].sum())
     # print(mercadosdf.iloc[mercadosdf["total"].idxmax()])
     # print(mercadosdf.iloc[mercadosdf["total"].idxmin()])
-    return "oi"
+    return items
