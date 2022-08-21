@@ -210,6 +210,7 @@ def mercado():
     # mercadosdf["total"] = mercadosdf.apply(lambda x: x["quantity"] * x["price"], axis=1)
     # grouped = mercadosdf.groupby("description")
     mercadodf = mercado_dataframe()
+    mercadodf['datetime'] = pd.to_datetime(mercadodf.date, format="%d/%m/%Y")
     mercadodf_grouped = mercadodf.groupby("description")
 
     months = mercadodf["date"].unique()
@@ -221,7 +222,9 @@ def mercado():
             "item": name,
             "frequencia": group["price"].count().item(),
             "media": group["price"].mean().item(),
-            "quantidade": len(months)
+            "quantidade": len(months),
+            'picked': False,
+            "lastBuy": group["datetime"].max()
         })
         print(name)
         print(group["price"].count())
