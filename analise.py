@@ -218,13 +218,18 @@ def mercado():
 
     items = []
     for name, group in mercadodf_grouped:
+        date_diff = ((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25)
+        date_diff = date_diff if date_diff > 1 else 1
+        sugerido =  date_diff >= len(months) / group["price"].count().item()
+        print(f'{mercadodf["datetime"].max()} - {group["datetime"].max()} >= {len(months)} / {group["price"].count().item()} = {((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25) >= len(months) / group["price"].count().item()}')
         items.append({
             "item": name,
             "frequencia": group["price"].count().item(),
             "media": group["price"].mean().item(),
             "quantidade": len(months),
-            'picked': False,
-            "lastBuy": group["datetime"].max()
+            'picked': True if sugerido else False,
+            "lastBuy": group["datetime"].max(),
+            "sugerido":  sugerido
         })
         print(name)
         print(group["price"].count())
