@@ -207,32 +207,29 @@ def dashboard():
     }
 
 def mercado():
-    # mercadosdf["total"] = mercadosdf.apply(lambda x: x["quantity"] * x["price"], axis=1)
-    # grouped = mercadosdf.groupby("description")
-    mercado = mercado_dataframe()
+    mercadodf = mercado_dataframe()
+    mercadodf['datetime'] = pd.to_datetime(mercadodf.date, format="%d/%m/%Y")
+    mercadodf_grouped = mercadodf.groupby("description")
 
-  
-    
-    print(mercado)
+    months = mercadodf["date"].unique()
+    print(months)
 
-    # print(grouped.groups)
-    # folder = "1iE_m8FCXT5f5-m_juEcHFjRlkG4BkwvN"
-    # arquivos = drive.ListFile({'q': f"'{folder}' in parents and trashed=false"}).GetList()
-    # csvs = []
-    # for arquivo in arquivos:
-    #     arquivo.GetContentFile(arquivo['title'])
-    #     csvs.append(arquivo["title"])
+    items = []
+    for name, group in mercadodf_grouped:
+        date_diff = ((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25)
+        date_diff = date_diff if date_diff > 1 else 1
+        sugerido =  date_diff >= len(months) / group["price"].count().item()
+        print(f'{mercadodf["datetime"].max()} - {group["datetime"].max()} >= {len(months)} / {group["price"].count().item()} = {((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25) >= len(months) / group["price"].count().item()}')
+        items.append({
+            "item": name,
+            "frequencia": group["price"].count().item(),
+            "media": group["price"].mean().item(),
+            "quantidade": len(months),
+            'picked': True if sugerido else False,
+            "lastBuy": group["datetime"].max(),
+            "sugerido":  sugerido
+        })
+        print(name)
+        print(group["price"].count())
 
-    # df = []
-    # for csv in csvs:
-    #     df.append(pd.read_csv(csv, delimiter=',' ))
-
-    # dataframe = pd.concat(df)
-    # print(dataframe)
-    # drive.GetContentFile("oom_list_export 01-22.csv")
-    # for name, group in grouped:
-    #     print(group) 
-    # print(mercadosdf["total"].sum())
-    # print(mercadosdf.iloc[mercadosdf["total"].idxmax()])
-    # print(mercadosdf.iloc[mercadosdf["total"].idxmin()])
-    return "oi"
+    return items
