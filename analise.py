@@ -207,8 +207,6 @@ def dashboard():
     }
 
 def mercado():
-    # mercadosdf["total"] = mercadosdf.apply(lambda x: x["quantity"] * x["price"], axis=1)
-    # grouped = mercadosdf.groupby("description")
     mercadodf = mercado_dataframe()
     mercadodf['datetime'] = pd.to_datetime(mercadodf.date, format="%d/%m/%Y")
     mercadodf_grouped = mercadodf.groupby("description")
@@ -234,24 +232,4 @@ def mercado():
         print(name)
         print(group["price"].count())
 
-    # print(grouped.groups)
-    # folder = "1iE_m8FCXT5f5-m_juEcHFjRlkG4BkwvN"
-    # arquivos = drive.ListFile({'q': f"'{folder}' in parents and trashed=false"}).GetList()
-    # csvs = []
-    # for arquivo in arquivos:
-    #     arquivo.GetContentFile(arquivo['title'])
-    #     csvs.append(arquivo["title"])
-
-    # df = []
-    # for csv in csvs:
-    #     df.append(pd.read_csv(csv, delimiter=',' ))
-
-    # dataframe = pd.concat(df)
-    # print(dataframe)
-    # drive.GetContentFile("oom_list_export 01-22.csv")
-    # for name, group in grouped:
-    #     print(group) 
-    # print(mercadosdf["total"].sum())
-    # print(mercadosdf.iloc[mercadosdf["total"].idxmax()])
-    # print(mercadosdf.iloc[mercadosdf["total"].idxmin()])
     return items
