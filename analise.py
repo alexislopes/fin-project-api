@@ -4,14 +4,14 @@ import json
 import pandas as pd
 from datetime import datetime, date
 from datasets import mercado_dataframe, objetivos_dataframe, contas_dataframe, transacoes_dataframe
+from recursos import selectRecursos
 
 df = transacoes_dataframe()
-recursos = ['Silvana', 'Alexis']
-
 
 
 def balancoMensal():
     return df['Valor'].sum()
+
 
 def despesas():
     despesas = df.query('Valor < 0')
@@ -34,11 +34,13 @@ def receitasSilvana():
 
     receitasSilvana = df.query('Silvana == True')
     receitasSilvana = receitasSilvana.query('Valor > 0')
-    print(receitasSilvana)
     return receitasSilvana['Valor'].sum()
 
 
 def receitasByMonth(timestamp):
+    recursos = [recurso["nome"] for recurso in selectRecursos()]
+    print(recursos)
+
     isCurrentMonth = True
 
     if df.empty:
@@ -46,7 +48,8 @@ def receitasByMonth(timestamp):
 
     desired_month_year = datetime.fromtimestamp(timestamp)
 
-    previous_desired_month_year = datetime(desired_month_year.year, desired_month_year.month - 1, 1)
+    previous_desired_month_year = datetime(
+        desired_month_year.year, desired_month_year.month - 1, 1)
 
     most_recent = datetime.fromtimestamp(df.timestamp.max())
 
@@ -54,19 +57,19 @@ def receitasByMonth(timestamp):
 
     df['is_desired_month_year'] = df['month_year'].map(
         lambda x: x) == datetime(datetime.fromtimestamp(timestamp).year,
-                       datetime.fromtimestamp(timestamp).month, 1) #desired_month_year.month + desired_month_year.year
+                                 datetime.fromtimestamp(timestamp).month, 1)  # desired_month_year.month + desired_month_year.year
 
     df['is_previous_desired_month_year'] = df['month_year'].map(
         lambda x: x) == datetime(datetime.fromtimestamp(previous_desired_month_year.timestamp()).year,
-                       datetime.fromtimestamp(previous_desired_month_year.timestamp()).month, 1) #previous_desired_month_year.month + previous_desired_month_year.year
+                                 datetime.fromtimestamp(previous_desired_month_year.timestamp()).month, 1)  # previous_desired_month_year.month + previous_desired_month_year.year
 
     df['most_recent'] = df['month_year'].map(
         lambda x: x) == datetime(datetime.fromtimestamp(most_recent.timestamp()).year,
-                       datetime.fromtimestamp(most_recent.timestamp()).month, 1)#most_recent.month + most_recent.year
+                                 datetime.fromtimestamp(most_recent.timestamp()).month, 1)  # most_recent.month + most_recent.year
 
     df['previous_most_recent'] = df['month_year'].map(
         lambda x: x) == datetime(datetime.fromtimestamp(previous_most_recent.timestamp()).year,
-                       datetime.fromtimestamp(previous_most_recent.timestamp()).month, 1) # previous_most_recent.month + previous_most_recent.year
+                                 datetime.fromtimestamp(previous_most_recent.timestamp()).month, 1)  # previous_most_recent.month + previous_most_recent.year
 
     tm = df.query('is_desired_month_year == True')
     pdm = df.query('is_previous_desired_month_year == True')
@@ -85,7 +88,8 @@ def receitasByMonth(timestamp):
     grouped = tm.groupby("recurso")
 
     ts = timestamp if isCurrentMonth else df.timestamp.max().item()
-    pts = previous_desired_month_year.timestamp() if isCurrentMonth else previous_most_recent.timestamp()
+    pts = previous_desired_month_year.timestamp(
+    ) if isCurrentMonth else previous_most_recent.timestamp()
 
     desired = json.loads(grouped['Valor'].sum().to_json())
     previous = json.loads(groupedpmr['Valor'].sum().to_json())
@@ -103,7 +107,6 @@ def receitasByMonth(timestamp):
 def getCusto():
 
     only_debits = df.query('Valor < 0')
-    print(only_debits)
     cost = only_debits["Valor"].sum() / len(df['month_year'].unique()) * -1
     return {'custo': cost}
 
@@ -114,13 +117,11 @@ def recursoAvancado(recurso):
     ultimos_doze_meses = df.query(f"timestamp > {ha_um_ano}")
 
     receitas_total = ultimos_doze_meses.query("Valor > 0")['Valor'].sum()
-    print(receitas_total)
 
     dfrecurso = ultimos_doze_meses.query(f'recurso == "{recurso}"')
     dfrecurso = dfrecurso.sort_values(by='timestamp')
 
     meses_referencia_count = len(dfrecurso['month_year'].unique())
-    print(dfrecurso)
 
     dfdespesas = dfrecurso.query('Valor < 0')
 
@@ -130,7 +131,6 @@ def recursoAvancado(recurso):
         'Subcategoria == "Rendimentos" | Subcategoria == "Proventos" | Subcategoria == "JCP"')
 
     receitas_agrupadas = dfreceitas.groupby('month_year')
-    print(receitas_agrupadas.Valor.sum())
     despesas_agrupadas = dfdespesas.groupby('month_year')
 
     variacao_despesas_soma = list(despesas_agrupadas['Valor'].sum())
@@ -150,7 +150,6 @@ def recursoAvancado(recurso):
     variacao = 0
 
     for previous, current in zip(lista, lista[1:]):
-        print(f"previous: {previous}, current: {current}")
         variacao += (current - previous) * 100 / current
 
     return {
@@ -167,8 +166,8 @@ def recursoAvancado(recurso):
 
 
 def getObjetivos():
-    objdf = objetivos_dataframe()    
-                                                                                                                    
+    objdf = objetivos_dataframe()
+
     objetivos_agrupados = objdf.groupby('Descricao')
     objetivos = []
     for name, group in objetivos_agrupados:
@@ -185,7 +184,7 @@ def getObjetivos():
 
 def dashboard():
     contasdf = contas_dataframe()
-    
+
     ha_um_ano = datetime(datetime.now().year - 1,
                          datetime.now().month, 1).timestamp()
 
@@ -194,8 +193,6 @@ def dashboard():
 
     despesas = ano_atras.query('Valor < 0')['Valor'].sum()
     receitas = ano_atras.query('Valor > 0')['Valor'].sum()
-    print(receitas)
-
 
     reserva = contasdf.query('Conta == "Guardado Silvana"')['Valor'].sum()
     reserva2 = contasdf.query('Conta == "Guardado Alexis"')['Valor'].sum()
@@ -206,20 +203,20 @@ def dashboard():
         'reserva': reserva + reserva2
     }
 
+
 def mercado():
     mercadodf = mercado_dataframe()
     mercadodf['datetime'] = pd.to_datetime(mercadodf.date, format="%d/%m/%Y")
     mercadodf_grouped = mercadodf.groupby("description")
 
     months = mercadodf["date"].unique()
-    print(months)
 
     items = []
     for name, group in mercadodf_grouped:
-        date_diff = ((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25)
+        date_diff = ((mercadodf["datetime"].max() -
+                     group["datetime"].max()).days / 30.25)
         date_diff = date_diff if date_diff > 1 else 1
-        sugerido =  date_diff >= len(months) / group["price"].count().item()
-        print(f'{mercadodf["datetime"].max()} - {group["datetime"].max()} >= {len(months)} / {group["price"].count().item()} = {((mercadodf["datetime"].max() - group["datetime"].max()).days / 30.25) >= len(months) / group["price"].count().item()}')
+        sugerido = date_diff >= len(months) / group["price"].count().item()
         items.append({
             "item": name,
             "frequencia": group["price"].count().item(),
@@ -229,7 +226,5 @@ def mercado():
             "lastBuy": group["datetime"].max(),
             "sugerido":  sugerido
         })
-        print(name)
-        print(group["price"].count())
 
     return items
