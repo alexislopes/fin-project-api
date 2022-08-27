@@ -1,5 +1,12 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 from analise import balancoMensal, despesas, receitas, receitasAlexis, receitasSilvana, receitasByMonth, getCusto, recursoAvancado, getObjetivos, dashboard, mercado
+from recursos import insertRecurso, selectRecursos
+
+
+class Recurso(BaseModel):
+    nome: str
+    agregador: str
 
 
 app = FastAPI()
@@ -54,6 +61,17 @@ def objetivos():
 def getDasboard():
     return dashboard()
 
+
 @app.get("/mercado")
 def getMercado():
     return mercado()
+
+
+@app.post("/recurso")
+def setRecurso(recurso: Recurso):
+    insertRecurso(recurso)
+
+
+@app.get("/recursos")
+def getRecursos():
+    return selectRecursos()
