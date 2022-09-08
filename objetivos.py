@@ -2,12 +2,12 @@ from database import db
 import json
 
 
-def insertRecurso(recurso):
+def insertObjetivo(objetivo):
     dbase = db()
     cursor = dbase.cursor()
     try:
         cursor.execute(
-            f"INSERT INTO recursos VALUES (?, ?)", (recurso.id, recurso.nome))
+            f"INSERT INTO objetivos VALUES (?, ?)", (objetivo.id, objetivo.descricao))
         dbase.commit()
         dbase.close()
 
@@ -15,12 +15,12 @@ def insertRecurso(recurso):
         print(err)
 
 
-def selectRecursos():
+def selectObjetivos():
     dbase = db()
     cursor = dbase.cursor()
     try:
         rows = cursor.execute(
-            "SELECT * FROM recursos").fetchall()
+            "SELECT * FROM objetivos").fetchall()
         dbase.commit()
         dbase.close()
         return json.loads(json.dumps([dict(ix) for ix in rows]))

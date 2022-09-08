@@ -38,7 +38,7 @@ def receitasSilvana():
 
 
 def receitasByMonth(timestamp):
-    recursos = [recurso["nome"] for recurso in selectRecursos()]
+    recursos = [recurso for recurso in selectRecursos()]
     print(recursos)
 
     isCurrentMonth = True
@@ -95,10 +95,11 @@ def receitasByMonth(timestamp):
     previous = json.loads(groupedpmr['Valor'].sum().to_json())
 
     lista = list(map(lambda x: {
-        'name': x,
-        'previous': {'value': previous[x], 'timestamp': pts*1000},
+        'name': x['nome'],
+        'id': x['id'],
+        'previous': {'value': previous[x['nome']], 'timestamp': pts*1000},
         'timestamp': ts*1000,
-        'value': desired[x]
+        'value': desired[x['nome']]
     }, recursos))
 
     return {'isDesired': isCurrentMonth, 'recursos': lista}
@@ -184,6 +185,7 @@ def getObjetivos():
 
 def dashboard():
     contasdf = contas_dataframe()
+    print(contasdf)
 
     ha_um_ano = datetime(datetime.now().year - 1,
                          datetime.now().month, 1).timestamp()
@@ -194,8 +196,12 @@ def dashboard():
     despesas = ano_atras.query('Valor < 0')['Valor'].sum()
     receitas = ano_atras.query('Valor > 0')['Valor'].sum()
 
-    reserva = contasdf.query('Conta == "Guardado Silvana"')['Valor'].sum()
-    reserva2 = contasdf.query('Conta == "Guardado Alexis"')['Valor'].sum()
+    max_time = contasdf['timestamp'].max()
+    contasdf = contasdf.query(f'timestamp == {max_time}')
+    print(contasdf)
+
+    reserva = contasdf.query('conta == "Guardado Silvana"')['valor'].sum()
+    reserva2 = contasdf.query('conta == "Guardado Alexis"')['valor'].sum()
 
     return {
         'despesas': despesas / meses_referencia_count * -1,
